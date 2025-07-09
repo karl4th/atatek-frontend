@@ -63,6 +63,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Trigger main repository frontend rebuild
+        if: success()
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.MAIN_REPO_TOKEN }}
+          repository: ${{ github.repository_owner }}/atatek-v2
+          event-type: frontend-build-complete
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+
       - name: Clean up Docker images
         if: always()
         run: |
