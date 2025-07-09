@@ -10,6 +10,7 @@ import axios from "axios"
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
 export function RegisterForm({
   className,
@@ -21,20 +22,26 @@ export function RegisterForm({
     const [password, setPassword] = useState("");
     const [first_name, setFirst_name] = useState("");
     const [last_name, setLast_name] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const phoneNumber = "+" + phone.replace(/\s/g, '');
-        register(phoneNumber, password, first_name, last_name);
+        setLoading(true);
+        await register(phoneNumber, password, first_name, last_name);
+        setLoading(false);
     }
 
 
     const register = async (phone: string, password: string, first_name: string, last_name: string) => {
-        const response = await axios.post('https://api.atatek.kz/auth/signup', { phone, password, first_name, last_name }, { withCredentials: true });
-        console.log(response);
-        if (response.status === 200) {
-            login(phone, password);
-            router.push('/auth/register/address');
+        try {
+            const response = await axios.post('https://api.atatek.kz/auth/signup', { phone, password, first_name, last_name }, { withCredentials: true });
+            if (response.status === 200) {
+                await login(phone, password);
+                router.push('/auth/register/address');
+            }
+        } catch (error) {
+            toast("Қате орын алды. Қайтадан көріңіз");
         }
     }
 
@@ -66,8 +73,8 @@ export function RegisterForm({
                     <Label htmlFor="password">Құпия сөз</Label>
                     <Input id="password" type="password" required placeholder="********" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
-                <Button type="submit" className="w-full">
-                    Тіркелу
+                <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="h-4 w-4 animate-spin" />} Тіркелу
                 </Button>
 
             </div>

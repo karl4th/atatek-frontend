@@ -8,6 +8,7 @@ import { PhoneInputField } from "@/components/ui/phone-input"
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
 export function LoginForm({
   className,
@@ -17,11 +18,14 @@ export function LoginForm({
   const { login } = useAuth();
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const phoneNumber = "+" + phone.replace(/\s/g, '');
+    setLoading(true);
     const res = await login(phoneNumber, password);
+    setLoading(false);
     if (res) {
       router.push("/");
     }
@@ -55,8 +59,8 @@ export function LoginForm({
           </div>
           <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
-        <Button type="submit" className="w-full">
-          Жүйеге кіру
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />} Жүйеге кіру
         </Button>
 
       </div>
