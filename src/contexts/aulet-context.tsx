@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const API_BASE_URL = 'https://api.atatek.kz';
 
-// Интерфейсы согласно документации API
 export interface PersonData {
   first_name: string;
   last_name: string;
