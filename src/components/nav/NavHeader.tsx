@@ -22,7 +22,17 @@ type Props = {
 export const NavHeader = (props: Props) => {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = React.useState(false);
-    const { page, isHydrated } = useAuth();
+    const { page, isHydrated, user } = useAuth();
+
+    // Function to get user initials
+    const getInitials = () => {
+        if (!user?.first_name || !user?.last_name) return "БК";
+        
+        const firstInitial = user.first_name.charAt(0).toUpperCase();
+        const lastInitial = user.last_name.charAt(0).toUpperCase();
+        
+        return `${firstInitial}${lastInitial}`;
+    };
 
     React.useEffect(() => {
         // Close mobile menu when route changes
@@ -111,7 +121,7 @@ export const NavHeader = (props: Props) => {
                                 >
                                     <Avatar className="rounded-xs m-auto size-10 cursor-pointer border-2 border-transparent hover:border-white transition-all duration-300">
                                         <AvatarImage src="https://githubs.com/shadcn.png" />
-                                        <AvatarFallback className="bg-secondary text-black rounded-sm">БК</AvatarFallback>
+                                        <AvatarFallback className="bg-secondary text-black rounded-sm">{getInitials()}</AvatarFallback>
                                     </Avatar>
                                 </motion.div>
                             </DropdownMenuTrigger>
@@ -172,7 +182,7 @@ export const NavHeader = (props: Props) => {
                                         >
                                             <Avatar className="size-16">
                                                 <AvatarImage src="https://githubs.com/shadcn.png" />
-                                                <AvatarFallback className="bg-secondary text-black text-xl">БК</AvatarFallback>
+                                                <AvatarFallback className="bg-secondary text-black text-xl">{getInitials()}</AvatarFallback>
                                             </Avatar>
                                         </motion.div>
                                     </div>

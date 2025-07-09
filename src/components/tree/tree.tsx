@@ -38,7 +38,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
       y: dimensions.height / 2 - clickedY + translate.y,
     };
 
-    animateTranslate(from, to, 1000, setTranslate);
+    animateTranslate(from, to, 2000, setTranslate);
 
 
 
@@ -91,9 +91,12 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
             <CustomNode {...rd3tProps} nodeDatum={rd3tProps.nodeDatum as unknown as TreeNode} onClick={handleNodeClick} />
           )}
           pathFunc="step"
+          dimensions={{ width: 100, height: 800 }}
           collapsible={false}
           shouldCollapseNeighborNodes={false}
           zoomable={true}
+          transitionDuration={1000}
+          centeringTransitionDuration={1000}
         />
       )}
     </div>

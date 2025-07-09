@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 23, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/middleware.ts"],"sourcesContent":["import { NextResponse } from 'next/server';\nimport type { NextRequest } from 'next/server';\n\nexport function middleware(request: NextRequest) {\n  // Handle API proxy requests\n  if (request.nextUrl.pathname.startsWith('/api/proxy/')) {\n    const response = NextResponse.next();\n    \n    // Forward cookies from the request to the API\n    const cookies = request.headers.get('cookie');\n    if (cookies) {\n      response.headers.set('cookie', cookies);\n    }\n    \n    return response;\n  }\n  \n  return NextResponse.next();\n}\n\nexport const config = {\n  matcher: '/api/proxy/:path*',\n}; "],"names":[],"mappings":";;;;AAAA;AAAA;;AAGO,SAAS,WAAW,OAAoB;IAC7C,4BAA4B;IAC5B,IAAI,QAAQ,OAAO,CAAC,QAAQ,CAAC,UAAU,CAAC,gBAAgB;QACtD,MAAM,WAAW,6LAAA,CAAA,eAAY,CAAC,IAAI;QAElC,8CAA8C;QAC9C,MAAM,UAAU,QAAQ,OAAO,CAAC,GAAG,CAAC;QACpC,IAAI,SAAS;YACX,SAAS,OAAO,CAAC,GAAG,CAAC,UAAU;QACjC;QAEA,OAAO;IACT;IAEA,OAAO,6LAAA,CAAA,eAAY,CAAC,IAAI;AAC1B;AAEO,MAAM,SAAS;IACpB,SAAS;AACX"}}]
+}

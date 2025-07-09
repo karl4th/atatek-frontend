@@ -30,7 +30,7 @@ export function RegisterForm({
 
 
     const register = async (phone: string, password: string, first_name: string, last_name: string) => {
-        const response = await axios.post('https://api.atatek.kz/auth/signup', { phone, password, first_name, last_name }, { withCredentials: true });
+        const response = await axios.post('https://api.atatek.kz/auth/signup', { phone, password, first_name, last_name });
         console.log(response);
         if (response.status === 200) {
             login(phone, password);
