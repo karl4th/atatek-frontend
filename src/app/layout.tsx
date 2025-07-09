@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
-import { Nunito, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner"
 
-const nunito = Nunito({
+// Временно используем системные шрифты вместо Google Fonts
+// для решения проблемы со сборкой Docker
+const nunito = {
     variable: "--font-nunito",
-    subsets: ["cyrillic"],
-});
+    className: "font-sans"
+};
 
-const nunitoSans = Nunito_Sans({
-    variable: "--font-nunito-sans",
-    subsets: ["cyrillic"],
-});
+const nunitoSans = {
+    variable: "--font-nunito-sans", 
+    className: "font-sans"
+};
 
 export const metadata: Metadata = {
     title: "ATATEK - Онлайн шежіре",
