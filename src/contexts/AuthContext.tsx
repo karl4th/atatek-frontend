@@ -49,7 +49,6 @@ type AuthContextType = {
 	page: Page | null;
 	checkAuth: () => Promise<void>;
 	login: (phone: string, password: string) => Promise<boolean>;
-	logout: () => Promise<void>;
 	loading: boolean;
 	error: string | null;
 	isHydrated: boolean;
@@ -99,18 +98,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	};
 
-	const logout = async () => {
-		try {
-			// Ask backend to invalidate cookie. Ignore errors - we'll still clear client state
-			await axios.post('https://api.atatek.kz/auth/logout', {}, { withCredentials: true });
-		} catch (error) {
-			// nothing
-		} finally {
-			setUser(null);
-			router.push('/auth/login');
-		}
-	}
-
 	// Handle redirect after hydration
 	useEffect(() => {
 		if (isHydrated && !loading && !user && error) {
@@ -136,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	// Always render children, but handle loading states properly
 	return (
-		<AuthContext.Provider value={{ user, loading, login, logout, error, checkAuth, page, isHydrated }}>
+		<AuthContext.Provider value={{ user, loading, login, error, checkAuth, page, isHydrated }}>
 			{children}
 		</AuthContext.Provider>
 	);

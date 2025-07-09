@@ -200,19 +200,6 @@ const AuthProvider = ({ children })=>{
             setLoading(false);
         }
     };
-    const logout = async ()=>{
-        try {
-            // Ask backend to invalidate cookie. Ignore errors - we'll still clear client state
-            await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$axios$2f$lib$2f$axios$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"].post('https://api.atatek.kz/auth/logout', {}, {
-                withCredentials: true
-            });
-        } catch (error) {
-        // nothing
-        } finally{
-            setUser(null);
-            router.push('/auth/login');
-        }
-    };
     // Handle redirect after hydration
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (isHydrated && !loading && !user && error) {
@@ -247,7 +234,6 @@ const AuthProvider = ({ children })=>{
             user,
             loading,
             login,
-            logout,
             error,
             checkAuth,
             page,
@@ -256,7 +242,7 @@ const AuthProvider = ({ children })=>{
         children: children
     }, void 0, false, {
         fileName: "[project]/src/contexts/AuthContext.tsx",
-        lineNumber: 139,
+        lineNumber: 126,
         columnNumber: 3
     }, this);
 };
