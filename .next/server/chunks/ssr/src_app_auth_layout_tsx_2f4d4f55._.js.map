@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///Users/baxa/Documents/atatek/atatek-v2/frontend/src/app/auth/layout.tsx"],"sourcesContent":["import type { Metadata } from \"next\";\nimport { Nunito, Nunito_Sans } from \"next/font/google\";\nimport \"../globals.css\";\nimport { Toaster } from \"@/components/ui/sonner\"\n\nconst nunito = Nunito({\n    variable: \"--font-nunito\",\n    subsets: [\"cyrillic\"],\n});\n\nconst nunitoSans = Nunito_Sans({\n    variable: \"--font-nunito-sans\",\n    subsets: [\"cyrillic\"],\n});\n\nexport const metadata: Metadata = {\n    title: \"ATATEK - Жүйеге кіру\",\n};\n\nexport default function RootLayout({children}: Readonly<{children: React.ReactNode}>) {\n    return (\n        <html lang=\"kz\">\n            <body className={`${nunito.variable} ${nunitoSans.variable} antialiased`}>\n                {children}\n                <Toaster />\n            </body>\n        </html>\n    );\n}\n"],"names":[],"mappings":";;;;;;;AAGA;;;;;;AAYO,MAAM,WAAqB;IAC9B,OAAO;AACX;AAEe,SAAS,WAAW,EAAC,QAAQ,EAAwC;IAChF,qBACI,8OAAC;QAAK,MAAK;kBACP,cAAA,8OAAC;YAAK,WAAW,GAAG,0IAAA,CAAA,UAAM,CAAC,QAAQ,CAAC,CAAC,EAAE,+IAAA,CAAA,UAAU,CAAC,QAAQ,CAAC,YAAY,CAAC;;gBACnE;8BACD,8OAAC,kIAAA,CAAA,UAAO;;;;;;;;;;;;;;;;AAIxB","debugId":null}}]
-}
