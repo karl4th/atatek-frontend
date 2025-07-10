@@ -177,3 +177,117 @@
   font-style: italic;
   color: var(--muted-foreground);
 }
+
+/* Tree Animation Styles */
+.tree-container {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tree-container.transitioning {
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth zoom and pan animations */
+.tree-container svg {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Node hover effects */
+.tree-node {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tree-node:hover {
+  filter: brightness(1.1);
+}
+
+/* Link animations */
+.tree-link {
+  transition: stroke-width 0.2s ease-in-out, 
+              stroke 0.2s ease-in-out;
+}
+
+.tree-link:hover {
+  stroke-width: 3px;
+}
+
+/* Smooth node appearance */
+@keyframes nodeAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-20px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.tree-node-appear {
+  animation: nodeAppear 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Smooth node disappear */
+@keyframes nodeDisappear {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-10px);
+  }
+}
+
+.tree-node-disappear {
+  animation: nodeDisappear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Pulse effect for active nodes */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(165, 200, 108, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(165, 200, 108, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(165, 200, 108, 0);
+  }
+}
+
+.tree-node-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Smooth path transitions */
+.tree-path {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar for better UX */
+.tree-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+  background: rgba(165, 200, 108, 0.5);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(165, 200, 108, 0.7);
+}
