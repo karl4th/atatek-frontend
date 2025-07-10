@@ -10,6 +10,7 @@ import { TreeProvider, useTree } from "@/contexts/tree-context";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useHydration } from "@/hooks/useHydration";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const initialTreeData = {
   id: 1,
@@ -130,8 +131,10 @@ function TreeContent() {
 
 export default function Home() {
   return (
-    <TreeProvider>
-      <TreeContent />
-    </TreeProvider>
+    <ProtectedRoute>
+      <TreeProvider>
+        <TreeContent />
+      </TreeProvider>
+    </ProtectedRoute>
   );
 }

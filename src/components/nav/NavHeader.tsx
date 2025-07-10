@@ -22,7 +22,7 @@ type Props = {
 export const NavHeader = (props: Props) => {
     const pathname = usePathname();
     const [isOpen, setIsOpen] = React.useState(false);
-    const { page, isHydrated, user } = useAuth();
+    const { page, isHydrated, user, loading, logout } = useAuth();
 
     // Function to get user initials
     const getInitials = () => {
@@ -55,23 +55,29 @@ export const NavHeader = (props: Props) => {
 
     // Base nav items that are always available
     const baseNavItems = [
-        { href: "/", label: "Шежіре" },
-        { href: "/menin-auletim", label: "Менің әулетім" },
-        { href: "/stats", label: "Статистика" },
+        { href: "/", label: "Шежіре", isLoading: false },
+        { href: "/menin-auletim", label: "Менің әулетім", isLoading: false },
+        { href: "/stats", label: "Статистика", isLoading: false },
     ];
 
-    // Additional nav items based on page data - only show after hydration
-    const dynamicNavItems = isHydrated && page ? [
-        { href: "/menin-ruym", label: page.title },
-        { href: "/zhanalyktar", label: page?.title ? page.title + " жаңалықтары" : "" },
+    // Additional nav items based on page data - only show after hydration and loading
+    const dynamicNavItems = isHydrated && !loading && page ? [
+        { href: "/menin-ruym", label: page.title, isLoading: false },
+        { href: "/zhanalyktar", label: page?.title ? page.title + " жаңалықтары" : "", isLoading: false },
     ] : [];
 
-    const navItems = [...baseNavItems, ...dynamicNavItems];
+    // Show loading skeleton for dynamic nav items
+    const loadingNavItems = isHydrated && loading && user ? [
+        { href: "#", label: "Жүктелуде...", isLoading: true },
+        { href: "#", label: "Жүктелуде...", isLoading: true },
+    ] : [];
+
+    const navItems = [...baseNavItems, ...dynamicNavItems, ...loadingNavItems];
 
     const userMenuItems = [
-        { href: "/profile", label: "Менің парақшам" },
-        { href: "/settings", label: "Баптаулар" },
-        { href: "/auth/logout", label: "Шығу" }
+        { href: "/profile", label: "Менің парақшам", action: null },
+        { href: "/settings", label: "Баптаулар", action: null },
+        { href: "#", label: "Шығу", action: logout }
     ];
 
     return (
@@ -101,6 +107,7 @@ export const NavHeader = (props: Props) => {
                                 href={item.href}
                                 label={item.label}
                                 isActive={pathname === item.href}
+                                isLoading={item.isLoading}
                             />
                         ))}
                     </div>
@@ -130,8 +137,13 @@ export const NavHeader = (props: Props) => {
                                     <DropdownMenuItem
                                         key={item.href}
                                         className="cursor-pointer transition-all duration-200 hover:bg-primary/10 hover:pl-4"
+                                        onClick={item.action}
                                     >
-                                        <Link href={item.href}>{item.label}</Link>
+                                        {item.action ? (
+                                            <span>{item.label}</span>
+                                        ) : (
+                                            <Link href={item.href}>{item.label}</Link>
+                                        )}
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
@@ -196,16 +208,22 @@ export const NavHeader = (props: Props) => {
                                                 animate={{ x: 0, opacity: 1 }}
                                                 transition={{ delay: 0.1 + idx * 0.1 }}
                                             >
-                                                <Link
-                                                    href={item.href}
-                                                    className={`block py-2 px-4 text-lg font-medium rounded-lg transition-colors duration-200 ${
-                                                        pathname === item.href
-                                                            ? "bg-white/20 text-white"
-                                                            : "text-white/80 hover:bg-white/10 hover:text-white"
-                                                    }`}
-                                                >
-                                                    {item.label}
-                                                </Link>
+                                                {item.isLoading ? (
+                                                    <div className="block py-2 px-4 text-lg font-medium rounded-lg text-white/60 animate-pulse">
+                                                        {item.label}
+                                                    </div>
+                                                ) : (
+                                                    <Link
+                                                        href={item.href}
+                                                        className={`block py-2 px-4 text-lg font-medium rounded-lg transition-colors duration-200 ${
+                                                            pathname === item.href
+                                                                ? "bg-white/20 text-white"
+                                                                : "text-white/80 hover:bg-white/10 hover:text-white"
+                                                        }`}
+                                                    >
+                                                        {item.label}
+                                                    </Link>
+                                                )}
                                             </motion.div>
                                         ))}
                                     </div>
@@ -225,12 +243,21 @@ export const NavHeader = (props: Props) => {
                                                 animate={{ y: 0, opacity: 1 }}
                                                 transition={{ delay: 0.3 + idx * 0.1 }}
                                             >
-                                                <Link
-                                                    href={item.href}
-                                                    className="block w-full text-left py-2 px-4 text-white/90 hover:text-white transition-colors"
-                                                >
-                                                    {item.label}
-                                                </Link>
+                                                {item.action ? (
+                                                    <button
+                                                        onClick={item.action}
+                                                        className="block w-full text-left py-2 px-4 text-white/90 hover:text-white transition-colors"
+                                                    >
+                                                        {item.label}
+                                                    </button>
+                                                ) : (
+                                                    <Link
+                                                        href={item.href}
+                                                        className="block w-full text-left py-2 px-4 text-white/90 hover:text-white transition-colors"
+                                                    >
+                                                        {item.label}
+                                                    </Link>
+                                                )}
                                             </motion.div>
                                         ))}
                                     </div>
@@ -244,7 +271,22 @@ export const NavHeader = (props: Props) => {
     );
 };
 
-const NavItem = ({ href, label, isActive }: { href: string; label: string; isActive: boolean }) => {
+const NavItem = ({ href, label, isActive, isLoading }: { href: string; label: string; isActive: boolean; isLoading?: boolean }) => {
+    if (isLoading) {
+        return (
+            <motion.div
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 0 }}
+                className="relative"
+            >
+                <div className="relative group inline-block">
+                    <span className="text-white/60 animate-pulse">{label}</span>
+                    <span className="absolute -bottom-1 left-0 h-0.5 bg-white/30 w-full animate-pulse"></span>
+                </div>
+            </motion.div>
+        );
+    }
+
     return (
         <motion.div
             whileHover={{ y: -2 }}

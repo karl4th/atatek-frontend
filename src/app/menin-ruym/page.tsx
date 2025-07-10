@@ -10,13 +10,14 @@ import { TreeProvider, useTree } from "@/contexts/tree-context";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useAuth } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 
 
 function TreeContent() {
   const [orientation, setOrientation] = useState<"vertical" | "horizontal">("vertical");
   const { open, setOpen } = useTree();
-  const { page, loading, isHydrated } = useAuth();
+  const { page } = useAuth();
   const contentRef = useRef<HTMLDivElement>(null);
 
   const initialTreeData = {
@@ -27,7 +28,6 @@ function TreeContent() {
   };
 
   const handleDownload = async () => {
-    if (!isHydrated) return;
     
     const element = contentRef.current;
     if (!element) return;
@@ -121,11 +121,7 @@ function TreeContent() {
           className="w-[100px] absolute top-10 left-10"
           style={{ visibility: "hidden", position: "absolute", left: "-9999px" }}
         />
-        {(!isHydrated || loading) ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : page ? (
+        {page ? (
           <TreeComponent orientation={orientation} initialData={initialTreeData} />
         ) : (
           <div className="flex items-center justify-center h-full">
@@ -141,8 +137,10 @@ function TreeContent() {
 
 export default function Home() {
   return (
-    <TreeProvider>
-      <TreeContent />
-    </TreeProvider>
+    <ProtectedRoute>
+      <TreeProvider>
+        <TreeContent />
+      </TreeProvider>
+    </ProtectedRoute>
   );
 }

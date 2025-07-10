@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -49,6 +49,7 @@ type AuthContextType = {
 	page: Page | null;
 	checkAuth: () => Promise<void>;
 	login: (phone: string, password: string) => Promise<boolean>;
+	logout: () => void;
 	loading: boolean;
 	error: string | null;
 	isHydrated: boolean;
@@ -63,7 +64,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const [page, setPage] = useState<Page | null>(null);
 	const [isHydrated, setIsHydrated] = useState(false);
 	const router = useRouter();
-	const pathname = usePathname();
 
 	useEffect(() => {
 		setIsHydrated(true);
@@ -75,6 +75,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		try {
 			const response = await axios.post('https://api.atatek.kz/auth/login', { phone, password }, { withCredentials: true });
 			setUser(response.data.data);
+			// Update page data after successful login
+			await getPage();
 			return true;
 		} catch (error) {
 			toast("Телефон номеріңіз немесе құпия сөзіңіз қате")
@@ -90,6 +92,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 			});
 			setUser(res.data.data);
 			setError(null);
+			// Update page data after successful auth
+			await getPage();
 		} catch (error) {
 			setUser(null);
 			setError('Не авторизован');
@@ -98,15 +102,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 	};
 
-	// Handle redirect after hydration
-	useEffect(() => {
-		if (isHydrated && !loading && !user && error) {
-			const isAuthPage = pathname?.startsWith('/auth/');
-			if (!isAuthPage) {
-				router.push('/auth/login');
-			}
-		}
-	}, [isHydrated, loading, user, error, pathname, router]);
+	// Redirect logic moved to ProtectedRoute component
 	
 	const getPage = async () => {
 		try{
@@ -118,12 +114,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		catch(error){
 			setPage(null);
 		}
+	}
+
+	const logout = () => {
+		// Clear all cookies
+		document.cookie.split(";").forEach(function(c) { 
+			document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+		});
 		
+		// Clear state
+		setUser(null);
+		setPage(null);
+		setError('Не авторизован');
+		
+		// Redirect to login
+		router.push('/auth/login');
 	}
 
 	// Always render children, but handle loading states properly
 	return (
-		<AuthContext.Provider value={{ user, loading, login, error, checkAuth, page, isHydrated }}>
+		<AuthContext.Provider value={{ user, loading, login, logout, error, checkAuth, page, isHydrated }}>
 			{children}
 		</AuthContext.Provider>
 	);

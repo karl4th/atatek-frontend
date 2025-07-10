@@ -9,6 +9,7 @@ import { AuletFamilyChart } from '@/components/aulet/aulet-family-chart';
 import { AuletPersonDrawer } from '@/components/aulet/aulet-person-drawer';
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function AuletContent() {
   const [orientation, setOrientation] = useState<"vertical" | "horizontal">("vertical");
@@ -141,8 +142,10 @@ function AuletContent() {
 
 export default function MeninAuletimPage() {
   return (
-    <AuletProvider>
-      <AuletContent />
-    </AuletProvider>
+    <ProtectedRoute>
+      <AuletProvider>
+        <AuletContent />
+      </AuletProvider>
+    </ProtectedRoute>
   );
 }
