@@ -38,7 +38,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
       y: dimensions.height / 2 - clickedY + translate.y,
     };
 
-    animateTranslate(from, to, 2000, setTranslate);
+    animateTranslate(from, to, 1000, setTranslate);
 
 
 
@@ -97,6 +97,9 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           zoomable={true}
           transitionDuration={1000}
           centeringTransitionDuration={1000}
+          // Настройки расстояния между узлами
+          nodeSize={orientation === "vertical" ? { x: 110, y: 100 } : { x: 140, y: 80 }} // Увеличиваем размер узлов для большего расстояния
+          separation={{ siblings: 1.2, nonSiblings: -1 }} // Увеличиваем расстояние между узлами
         />
       )}
     </div>
