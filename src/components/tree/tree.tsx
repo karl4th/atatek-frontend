@@ -60,6 +60,13 @@ const animateTranslate = (
 ) => {
   const start = performance.now();
   
+  console.log('🎬 Animation started:', {
+    from,
+    to,
+    duration,
+    startTime: start
+  });
+  
   // Добавляем небольшую задержку для более плавного старта
   const delay = 50;
   
@@ -82,6 +89,8 @@ const animateTranslate = (
 
     if (progress < 1) {
       requestAnimationFrame(step);
+    } else {
+      console.log('✅ Animation completed:', { x: currentX, y: currentY });
     }
   };
 
@@ -216,19 +225,69 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     const updateCenter = () => {
       if (treeContainer.current) {
         const rect = treeContainer.current.getBoundingClientRect();
-        setDimensions({ width: rect.width, height: rect.height });
-        requestAnimationFrame(() => {
-          setTranslate({ x: rect.width / 2, y: rect.height / 2 });
+        const newDimensions = { width: rect.width, height: rect.height };
+        const newTranslate = { x: rect.width / 2, y: rect.height / 2 };
+        
+        console.log('🌳 Tree Positioning Debug:');
+        console.log('📏 Container dimensions:', {
+          rect: { width: rect.width, height: rect.height },
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom
         });
+        console.log('🖥️ Window dimensions:', {
+          innerWidth: window.innerWidth,
+          innerHeight: window.innerHeight,
+          outerWidth: window.outerWidth,
+          outerHeight: window.outerHeight
+        });
+        console.log('📐 Document dimensions:', {
+          documentElement: {
+            clientWidth: document.documentElement.clientWidth,
+            clientHeight: document.documentElement.clientHeight,
+            scrollWidth: document.documentElement.scrollWidth,
+            scrollHeight: document.documentElement.scrollHeight
+          },
+          body: {
+            clientWidth: document.body.clientWidth,
+            clientHeight: document.body.clientHeight,
+            scrollWidth: document.body.scrollWidth,
+            scrollHeight: document.body.scrollHeight
+          }
+        });
+        console.log('🎯 Calculated center:', newTranslate);
+        console.log('🔄 Previous dimensions:', dimensions);
+        console.log('🔄 Previous translate:', translate);
+        
+        setDimensions(newDimensions);
+        requestAnimationFrame(() => {
+          setTranslate(newTranslate);
+          console.log('✅ Applied new translate:', newTranslate);
+        });
+      } else {
+        console.warn('⚠️ Tree container ref is null');
       }
     };
+    
+    console.log('🚀 Initializing tree positioning...');
     updateCenter();
-    window.addEventListener('resize', updateCenter);
-    return () => window.removeEventListener('resize', updateCenter);
+    
+    const handleResize = () => {
+      console.log('📱 Window resize detected');
+      updateCenter();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleNodeClick = async (nodeDatum: TreeNode, evt: React.MouseEvent) => {
-    if (!treeContainer.current) return;
+    if (!treeContainer.current) {
+      console.warn('⚠️ Tree container ref is null in handleNodeClick');
+      return;
+    }
+    
     setIsAnimating(true);
     const rect = treeContainer.current.getBoundingClientRect();
     const clickedX = evt.clientX - rect.left;
@@ -238,8 +297,17 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
       x: rect.width / 2 - clickedX + translate.x,
       y: rect.height / 2 - clickedY + translate.y,
     };
+    
+    console.log('🖱️ Node click debug:');
+    console.log('📍 Click coordinates:', { clientX: evt.clientX, clientY: evt.clientY });
+    console.log('📦 Container rect:', rect);
+    console.log('🎯 Relative click:', { clickedX, clickedY });
+    console.log('🔄 Animation from:', from);
+    console.log('🎯 Animation to:', to);
+    
     animateTranslate(from, to, 500, setTranslate, easingFunctions.easeInOutQuart);
     setTimeout(() => setIsAnimating(false), 500);
+    
     let updatedTree = closeSiblingNodes(treeData, nodeDatum.id);
     if (updatedTree !== treeData) {
       setTreeData(updatedTree);
@@ -268,6 +336,16 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     }
   };
 
+  // Логирование состояния компонента при каждом рендере
+  console.log('🔄 Tree component render:', {
+    dimensions,
+    translate,
+    isAnimating,
+    hasTreeData: !!treeData,
+    orientation,
+    containerRef: !!treeContainer.current
+  });
+
   return (
     <div
       style={{
@@ -285,28 +363,47 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
       ref={treeContainer}
       className="tree-container"
     >
-      {dimensions.width > 0 && treeData && (
-        <Tree
-          data={treeData}
-          orientation={orientation}
-          translate={translate}
-          renderCustomNodeElement={(rd3tProps) => (
-            <CustomNode {...rd3tProps} nodeDatum={rd3tProps.nodeDatum as unknown as TreeNode} onClick={handleNodeClick} />
-          )}
-          pathFunc="diagonal"
-          dimensions={{ width: 100, height: 800 }}
-          collapsible={false}
-          shouldCollapseNeighborNodes={false}
-          zoomable={true}
-          transitionDuration={1200}
-          centeringTransitionDuration={500}
-          nodeSize={orientation === "vertical" ? { x: 110, y: 100 } : { x: 140, y: 80 }}
-          separation={{ siblings: 1.2, nonSiblings: -1 }}
-          scaleExtent={{ min: 0.3, max: 3 }}
-          zoom={0.9}
-          enableLegacyTransitions={true}
-          pathClassFunc={() => "tree-path"}
-        />
+      {dimensions.width > 0 && treeData ? (
+        <>
+          {(() => {
+            console.log('🌳 Rendering Tree component with:', {
+              dimensions,
+              translate,
+              orientation,
+              dataNodes: treeData.children?.length || 0
+            });
+            return null;
+          })()}
+          <Tree
+            data={treeData}
+            orientation={orientation}
+            translate={translate}
+            renderCustomNodeElement={(rd3tProps) => (
+              <CustomNode {...rd3tProps} nodeDatum={rd3tProps.nodeDatum as unknown as TreeNode} onClick={handleNodeClick} />
+            )}
+            pathFunc="diagonal"
+            dimensions={{ width: 100, height: 800 }}
+            collapsible={false}
+            shouldCollapseNeighborNodes={false}
+            zoomable={true}
+            transitionDuration={1200}
+            centeringTransitionDuration={500}
+            nodeSize={orientation === "vertical" ? { x: 110, y: 100 } : { x: 140, y: 80 }}
+            separation={{ siblings: 1.2, nonSiblings: -1 }}
+            scaleExtent={{ min: 0.3, max: 3 }}
+            zoom={0.9}
+            enableLegacyTransitions={true}
+            pathClassFunc={() => "tree-path"}
+          />
+        </>
+      ) : (
+        (() => {
+          console.log('⏳ Waiting for dimensions or tree data:', {
+            dimensionsWidth: dimensions.width,
+            hasTreeData: !!treeData
+          });
+          return null;
+        })()
       )}
 
       <style jsx>{`
