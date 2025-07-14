@@ -207,13 +207,28 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     const style = document.createElement('style');
     style.innerHTML = `
       html, body, #__next {
-        width: 100%;
-        height: 100%;
-        min-width: 100vw;
-        min-height: 100vh;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
+        width: 100vw !important;
+        height: 100vh !important;
+        min-width: 100vw !important;
+        min-height: 100vh !important;
+        max-width: 100vw !important;
+        max-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+      }
+      
+      /* Safari specific fixes */
+      @supports (-webkit-touch-callout: none) {
+        html, body, #__next {
+          height: -webkit-fill-available !important;
+          min-height: -webkit-fill-available !important;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -225,10 +240,23 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     const updateCenter = () => {
       if (treeContainer.current) {
         const rect = treeContainer.current.getBoundingClientRect();
-        const newDimensions = { width: rect.width, height: rect.height };
-        const newTranslate = { x: rect.width / 2, y: rect.height / 2 };
+        
+        // Принудительно используем размеры окна для Safari
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const forceWindowSize = isSafari || rect.height < window.innerHeight * 0.8;
+        
+        const newDimensions = forceWindowSize 
+          ? { width: window.innerWidth, height: window.innerHeight }
+          : { width: rect.width, height: rect.height };
+          
+        const newTranslate = { x: newDimensions.width / 2, y: newDimensions.height / 2 };
         
         console.log('🌳 Tree Positioning Debug:');
+        console.log('🔍 Browser detection:', {
+          isSafari,
+          userAgent: navigator.userAgent,
+          forceWindowSize
+        });
         console.log('📏 Container dimensions:', {
           rect: { width: rect.width, height: rect.height },
           left: rect.left,
@@ -256,6 +284,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
             scrollHeight: document.body.scrollHeight
           }
         });
+        console.log('🎯 Final dimensions:', newDimensions);
         console.log('🎯 Calculated center:', newTranslate);
         console.log('🔄 Previous dimensions:', dimensions);
         console.log('🔄 Previous translate:', translate);
@@ -271,7 +300,15 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     };
     
     console.log('🚀 Initializing tree positioning...');
-    updateCenter();
+    
+    // Добавляем задержку для Safari, чтобы стили успели примениться
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      setTimeout(updateCenter, 100);
+      setTimeout(updateCenter, 500);
+    } else {
+      updateCenter();
+    }
     
     const handleResize = () => {
       console.log('📱 Window resize detected');
@@ -349,13 +386,17 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
   return (
     <div
       style={{
-        width: "100%",
-        height: "100%",
+        width: "100vw",
+        height: "100vh",
         minWidth: "100vw",
         minHeight: "100vh",
+        maxWidth: "100vw",
+        maxHeight: "100vh",
         position: "fixed",
         top: 0,
         left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 1,
         background: "linear-gradient(135deg, rgba(165,200,108,0.05) 0%, rgba(255,255,255,0.02) 100%)",
         overflow: "hidden"
@@ -410,6 +451,11 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
         .tree-container {
           transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          /* Safari specific fixes */
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
         }
         .tree-container.transitioning {
           transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
@@ -430,6 +476,14 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
         .tree-link:hover {
           stroke: #8fb85c;
           stroke-width: 3px;
+        }
+        
+        /* Safari specific styles */
+        @supports (-webkit-touch-callout: none) {
+          .tree-container {
+            height: -webkit-fill-available !important;
+            min-height: -webkit-fill-available !important;
+          }
         }
       `}</style>
     </div>
