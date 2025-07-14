@@ -19,7 +19,7 @@ interface CustomNodeProps {
   onClick: (nodeDatum: TreeNode, evt: React.MouseEvent) => void;
 }
 
-const CustomNode: React.FC<CustomNodeProps> = ({ nodeDatum, onClick }) => {
+const CustomNode: React.FC<CustomNodeProps> = ({ nodeDatum, onClick, ...props }) => {
   const birth = nodeDatum.birth;
   const death = nodeDatum.death;
   const hasDates = birth || death;
@@ -28,6 +28,22 @@ const CustomNode: React.FC<CustomNodeProps> = ({ nodeDatum, onClick }) => {
   const { setOpen, setSelectedPersonId } = useTree();
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+
+  // Логируем все пропсы для отладки
+  const isChrome = /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  
+  console.log('🎯 CustomNode render:', {
+    nodeDatum,
+    props,
+    nodeId: nodeDatum.id,
+    nodeName: nodeDatum.name,
+    browser: {
+      isChrome,
+      isSafari,
+      userAgent: navigator.userAgent
+    }
+  });
 
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,6 +104,15 @@ const CustomNode: React.FC<CustomNodeProps> = ({ nodeDatum, onClick }) => {
 
   return (
     <foreignObject width={120} height={80} x={-60} y={-40}>
+      {(() => {
+        console.log('🎯 CustomNode foreignObject:', {
+          nodeId: nodeDatum.id,
+          nodeName: nodeDatum.name,
+          position: { x: -60, y: -40 },
+          dimensions: { width: 120, height: 80 }
+        });
+        return null;
+      })()}
       <div
         onClick={(e) => onClick(nodeDatum, e)}
         onContextMenu={handleRightClick}

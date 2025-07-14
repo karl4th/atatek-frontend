@@ -195,14 +195,104 @@ const closeSiblingNodes = (tree: TreeNode, targetId: number): TreeNode => {
   return updatedTree;
 };
 
+// Универсальная функция для получения размеров экрана
+const getScreenDimensions = () => {
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  // Для Safari и iOS используем более надежные методы
+  if (isSafari || isIOS) {
+    // Используем visualViewport если доступен
+    if (window.visualViewport) {
+      return {
+        width: window.visualViewport.width,
+        height: window.visualViewport.height
+      };
+    }
+    
+    // Fallback для старых версий Safari
+    return {
+      width: window.innerWidth || document.documentElement.clientWidth || 1440,
+      height: window.innerHeight || document.documentElement.clientHeight || 900
+    };
+  }
+  
+  // Для других браузеров используем стандартные методы
+  return {
+    width: window.innerWidth,
+    height: window.innerHeight
+  };
+};
+
+// Универсальная функция для центрирования
+const calculateCenterPosition = (dimensions: Dimensions, orientation: string) => {
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  
+  // Базовые координаты центра
+  let centerX = dimensions.width / 2;
+  let centerY = dimensions.height / 2;
+  
+  // Корректировки для Safari и iOS
+  if (isSafari || isIOS) {
+    // Для вертикальной ориентации на мобильных устройствах
+    if (orientation === "vertical" && dimensions.height > dimensions.width) {
+      centerY = dimensions.height * 0.4; // Смещаем немного выше
+    }
+    
+    // Для горизонтальной ориентации
+    if (orientation === "horizontal") {
+      centerX = dimensions.width * 0.45; // Смещаем немного левее
+      centerY = dimensions.height * 0.5;
+    }
+  }
+  
+  return { x: centerX, y: centerY };
+};
+
 const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation }) => {
   const treeContainer = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<Dimensions>({ width: 0, height: 0 });
   const [treeData, setTreeData] = useState<TreeNode>(initialData!);
   const [translate, setTranslate] = useState<Translate>({ x: 0, y: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Глобальные стили для html/body
+  // Логируем initialData при инициализации
+  useEffect(() => {
+    const isChrome = /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    console.log('🌱 Initial tree data:', {
+      initialData,
+      treeData,
+      hasInitialData: !!initialData,
+      initialDataStructure: JSON.stringify(initialData, null, 2),
+      browser: {
+        isChrome,
+        isSafari,
+        userAgent: navigator.userAgent
+      }
+    });
+  }, [initialData]);
+
+  // Исправляем данные дерева для правильного рендеринга
+  const getFixedTreeData = (data: TreeNode): TreeNode => {
+    // Если у узла нет детей, добавляем фиктивный дочерний узел для правильного рендеринга
+    if (!data.children || data.children.length === 0) {
+      return {
+        ...data,
+        children: [{
+          id: -1, // Фиктивный ID
+          name: "", // Пустое имя
+          children: [] // Пустые дети
+        }]
+      };
+    }
+    return data;
+  };
+
+  // Универсальные стили для всех браузеров
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -223,11 +313,19 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
         bottom: 0 !important;
       }
       
-      /* Safari specific fixes */
+      /* Safari and iOS specific fixes */
       @supports (-webkit-touch-callout: none) {
         html, body, #__next {
           height: -webkit-fill-available !important;
           min-height: -webkit-fill-available !important;
+        }
+      }
+      
+      /* Additional Safari fixes */
+      @media screen and (-webkit-min-device-pixel-ratio: 0) {
+        html, body, #__next {
+          height: 100vh !important;
+          min-height: 100vh !important;
         }
       }
     `;
@@ -235,89 +333,61 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     return () => { document.head.removeChild(style); };
   }, []);
 
-  // Центрирование по размерам контейнера
+  // Универсальная функция инициализации позиционирования
+  const initializePositioning = () => {
+    if (!treeContainer.current) {
+      console.warn('⚠️ Tree container ref is null');
+      return;
+    }
+    
+    const screenDimensions = getScreenDimensions();
+    const centerPosition = calculateCenterPosition(screenDimensions, orientation);
+    
+    console.log('🌳 Universal positioning debug:', {
+      screenDimensions,
+      centerPosition,
+      orientation,
+      userAgent: navigator.userAgent
+    });
+    
+    setDimensions(screenDimensions);
+    setTranslate(centerPosition);
+    setIsInitialized(true);
+    
+    console.log('✅ Position initialized:', centerPosition);
+  };
+
+  // Инициализация позиционирования с задержками для разных браузеров
   useEffect(() => {
-    const updateCenter = () => {
-      if (treeContainer.current) {
-        const rect = treeContainer.current.getBoundingClientRect();
-        
-        // Принудительно используем размеры окна для Safari
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-        const forceWindowSize = isSafari || rect.height < window.innerHeight * 0.8;
-        
-        const newDimensions = forceWindowSize 
-          ? { width: window.innerWidth, height: window.innerHeight }
-          : { width: rect.width, height: rect.height };
-          
-        const newTranslate = { x: newDimensions.width / 2, y: newDimensions.height / 2 };
-        
-        console.log('🌳 Tree Positioning Debug:');
-        console.log('🔍 Browser detection:', {
-          isSafari,
-          userAgent: navigator.userAgent,
-          forceWindowSize
-        });
-        console.log('📏 Container dimensions:', {
-          rect: { width: rect.width, height: rect.height },
-          left: rect.left,
-          top: rect.top,
-          right: rect.right,
-          bottom: rect.bottom
-        });
-        console.log('🖥️ Window dimensions:', {
-          innerWidth: window.innerWidth,
-          innerHeight: window.innerHeight,
-          outerWidth: window.outerWidth,
-          outerHeight: window.outerHeight
-        });
-        console.log('📐 Document dimensions:', {
-          documentElement: {
-            clientWidth: document.documentElement.clientWidth,
-            clientHeight: document.documentElement.clientHeight,
-            scrollWidth: document.documentElement.scrollWidth,
-            scrollHeight: document.documentElement.scrollHeight
-          },
-          body: {
-            clientWidth: document.body.clientWidth,
-            clientHeight: document.body.clientHeight,
-            scrollWidth: document.body.scrollWidth,
-            scrollHeight: document.body.scrollHeight
-          }
-        });
-        console.log('🎯 Final dimensions:', newDimensions);
-        console.log('🎯 Calculated center:', newTranslate);
-        console.log('🔄 Previous dimensions:', dimensions);
-        console.log('🔄 Previous translate:', translate);
-        
-        setDimensions(newDimensions);
-        requestAnimationFrame(() => {
-          setTranslate(newTranslate);
-          console.log('✅ Applied new translate:', newTranslate);
-        });
-      } else {
-        console.warn('⚠️ Tree container ref is null');
-      }
-    };
-    
-    console.log('🚀 Initializing tree positioning...');
-    
-    // Добавляем задержку для Safari, чтобы стили успели примениться
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (isSafari) {
-      setTimeout(updateCenter, 100);
-      setTimeout(updateCenter, 500);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    console.log('🚀 Initializing universal tree positioning...');
+    
+    if (isSafari || isIOS) {
+      // Для Safari и iOS используем множественные попытки с задержками
+      setTimeout(initializePositioning, 100);
+      setTimeout(initializePositioning, 300);
+      setTimeout(initializePositioning, 500);
+      setTimeout(initializePositioning, 1000);
+      
+      // Дополнительная попытка после полной загрузки
+      window.addEventListener('load', () => {
+        setTimeout(initializePositioning, 200);
+      });
     } else {
-      updateCenter();
+      // Для других браузеров достаточно одной попытки
+      initializePositioning();
     }
     
     const handleResize = () => {
       console.log('📱 Window resize detected');
-      updateCenter();
+      setTimeout(initializePositioning, 100);
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [orientation]);
 
   const handleNodeClick = async (nodeDatum: TreeNode, evt: React.MouseEvent) => {
     if (!treeContainer.current) {
@@ -335,12 +405,13 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
       y: rect.height / 2 - clickedY + translate.y,
     };
     
-    console.log('🖱️ Node click debug:');
-    console.log('📍 Click coordinates:', { clientX: evt.clientX, clientY: evt.clientY });
-    console.log('📦 Container rect:', rect);
-    console.log('🎯 Relative click:', { clickedX, clickedY });
-    console.log('🔄 Animation from:', from);
-    console.log('🎯 Animation to:', to);
+    console.log('🖱️ Node click debug:', {
+      clickCoordinates: { clientX: evt.clientX, clientY: evt.clientY },
+      containerRect: rect,
+      relativeClick: { clickedX, clickedY },
+      animationFrom: from,
+      animationTo: to
+    });
     
     animateTranslate(from, to, 500, setTranslate, easingFunctions.easeInOutQuart);
     setTimeout(() => setIsAnimating(false), 500);
@@ -378,6 +449,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     dimensions,
     translate,
     isAnimating,
+    isInitialized,
     hasTreeData: !!treeData,
     orientation,
     containerRef: !!treeContainer.current
@@ -399,19 +471,32 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
         bottom: 0,
         zIndex: 1,
         background: "linear-gradient(135deg, rgba(165,200,108,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-        overflow: "hidden"
+        overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
       }}
       ref={treeContainer}
       className="tree-container"
     >
-      {dimensions.width > 0 && treeData ? (
+      {isInitialized && dimensions.width > 0 && treeData ? (
         <>
           {(() => {
+            const isChrome = /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            
             console.log('🌳 Rendering Tree component with:', {
               dimensions,
               translate,
               orientation,
-              dataNodes: treeData.children?.length || 0
+              dataNodes: treeData.children?.length || 0,
+              treeDataStructure: JSON.stringify(treeData, null, 2),
+              isValidData: treeData && treeData.id && treeData.name,
+              browser: {
+                isChrome,
+                isSafari,
+                userAgent: navigator.userAgent
+              }
             });
             return null;
           })()}
@@ -419,9 +504,23 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
             data={treeData}
             orientation={orientation}
             translate={translate}
-            renderCustomNodeElement={(rd3tProps) => (
-              <CustomNode {...rd3tProps} nodeDatum={rd3tProps.nodeDatum as unknown as TreeNode} onClick={handleNodeClick} />
-            )}
+            renderCustomNodeElement={(rd3tProps) => {
+              console.log('🎯 CustomNode render props:', {
+                nodeDatum: rd3tProps.nodeDatum,
+                hierarchyPointNode: rd3tProps.hierarchyPointNode,
+                position: rd3tProps.hierarchyPointNode?.x !== undefined ? {
+                  x: rd3tProps.hierarchyPointNode.x,
+                  y: rd3tProps.hierarchyPointNode.y
+                } : 'undefined'
+              });
+              return (
+                <CustomNode 
+                  {...rd3tProps} 
+                  nodeDatum={rd3tProps.nodeDatum as unknown as TreeNode} 
+                  onClick={handleNodeClick} 
+                />
+              );
+            }}
             pathFunc="diagonal"
             dimensions={{ width: 100, height: 800 }}
             collapsible={false}
@@ -435,13 +534,21 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
             zoom={0.9}
             enableLegacyTransitions={true}
             pathClassFunc={() => "tree-path"}
+            onUpdate={(target) => {
+              console.log('🔄 Tree onUpdate:', { target });
+            }}
+            onNodeClick={(nodeDatum, evt) => {
+              console.log('🖱️ Tree onNodeClick:', { nodeDatum, evt });
+            }}
           />
         </>
       ) : (
         (() => {
-          console.log('⏳ Waiting for dimensions or tree data:', {
+          console.log('⏳ Waiting for initialization:', {
+            isInitialized,
             dimensionsWidth: dimensions.width,
-            hasTreeData: !!treeData
+            hasTreeData: !!treeData,
+            treeDataValid: treeData && treeData.id && treeData.name
           });
           return null;
         })()
@@ -451,11 +558,13 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
         .tree-container {
           transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          /* Safari specific fixes */
+          /* Universal browser fixes */
           -webkit-transform: translateZ(0);
           transform: translateZ(0);
           -webkit-backface-visibility: hidden;
           backface-visibility: hidden;
+          -webkit-perspective: 1000px;
+          perspective: 1000px;
         }
         .tree-container.transitioning {
           transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
@@ -478,11 +587,19 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           stroke-width: 3px;
         }
         
-        /* Safari specific styles */
+        /* Universal Safari and iOS fixes */
         @supports (-webkit-touch-callout: none) {
           .tree-container {
             height: -webkit-fill-available !important;
             min-height: -webkit-fill-available !important;
+          }
+        }
+        
+        /* Additional Safari fixes */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+          .tree-container {
+            height: 100vh !important;
+            min-height: 100vh !important;
           }
         }
       `}</style>
