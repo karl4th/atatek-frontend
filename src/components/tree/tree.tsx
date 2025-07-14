@@ -194,22 +194,32 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
   const [translate, setTranslate] = useState<Translate>({ x: 0, y: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
 
+  // Простая инициализация - дерево всегда по центру экрана
   useEffect(() => {
-    if (treeContainer.current) {
-      const { width, height } = treeContainer.current.getBoundingClientRect();
+    const updateCenter = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
       setDimensions({ width, height });
-      setTranslate({ x: width / 2, y: height / 2 - 100 });
-    }
+      setTranslate({ x: width / 2, y: height / 2 });
+    };
+
+    updateCenter();
+    window.addEventListener('resize', updateCenter);
+    
+    return () => {
+      window.removeEventListener('resize', updateCenter);
+    };
   }, []);
 
   const handleNodeClick = async (nodeDatum: TreeNode, evt: React.MouseEvent) => {
     if (!treeContainer.current) return;
 
-    // Анимация центрирования
+    // Анимация центрирования на кликнутый узел
     setIsAnimating(true);
-    const bounds = treeContainer.current.getBoundingClientRect();
-    const clickedX = evt.clientX - bounds.left;
-    const clickedY = evt.clientY - bounds.top;
+    
+    const rect = treeContainer.current.getBoundingClientRect();
+    const clickedX = evt.clientX - rect.left;
+    const clickedY = evt.clientY - rect.top;
 
     const from = { ...translate };
     const to = {
@@ -221,15 +231,14 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     animateTranslate(
       from, 
       to, 
-      800, // Уменьшаем время для быстрой отзывчивости
+      500,
       setTranslate,
       easingFunctions.easeInOutQuart
     );
 
-    // Быстрее завершаем анимацию
     setTimeout(() => {
       setIsAnimating(false);
-    }, 850);
+    }, 500);
 
     // Сначала закрываем всех соседних узлов (братьев)
     let updatedTree = closeSiblingNodes(treeData, nodeDatum.id);
@@ -237,7 +246,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
     // Если были закрыты соседние узлы, обновляем дерево с небольшой задержкой для плавности
     if (updatedTree !== treeData) {
       setTreeData(updatedTree);
-      await new Promise(resolve => setTimeout(resolve, 150)); // Небольшая задержка для визуального эффекта
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
     
     // Логика раскрытия/сворачивания узлов
@@ -284,13 +293,17 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
   return (
     <div 
       style={{ 
-        width: "100%", 
+        width: "100vw", 
         height: "100vh", 
         zIndex: "1",
-        background: "linear-gradient(135deg, rgba(165,200,108,0.05) 0%, rgba(255,255,255,0.02) 100%)"
+        background: "linear-gradient(135deg, rgba(165,200,108,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        overflow: "hidden"
       }} 
       ref={treeContainer} 
-      className="fixed top-0 left-0 w-full h-full tree-container"
+      className="tree-container"
     >
       {dimensions.width > 0 && (
         <Tree
@@ -300,26 +313,21 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           renderCustomNodeElement={(rd3tProps) => (
             <CustomNode {...rd3tProps} nodeDatum={rd3tProps.nodeDatum as unknown as TreeNode} onClick={handleNodeClick} />
           )}
-          pathFunc="step"
+          pathFunc="diagonal"
           dimensions={{ width: 100, height: 800 }}
           collapsible={false}
           shouldCollapseNeighborNodes={false}
           zoomable={true}
-          transitionDuration={1200} // Увеличиваем время анимации
-          centeringTransitionDuration={800} // Плавное центрирование
-          // Настройки расстояния между узлами
+          transitionDuration={1200}
+          centeringTransitionDuration={800}
           nodeSize={orientation === "vertical" ? { x: 110, y: 100 } : { x: 140, y: 80 }}
           separation={{ siblings: 1.2, nonSiblings: -1 }}
-          // Дополнительные настройки для плавности
           scaleExtent={{ min: 0.3, max: 3 }}
           zoom={0.9}
-          enableLegacyTransitions={false}
-          // Плавная анимация путей
+          enableLegacyTransitions={true}
           pathClassFunc={() => "tree-path"}
-
         />
       )}
-      
       {/* Индикатор загрузки при анимации */}
       {isAnimating && (
         <div 
