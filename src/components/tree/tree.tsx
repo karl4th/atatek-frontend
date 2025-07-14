@@ -308,27 +308,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           pathClassFunc={() => "tree-path"}
         />
       )}
-      {isAnimating && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(165, 200, 108, 0.9)',
-            color: 'white',
-            padding: '8px 16px',
-            borderRadius: '20px',
-            fontSize: '14px',
-            fontWeight: '500',
-            zIndex: 1000,
-            opacity: isAnimating ? 1 : 0,
-            transition: 'opacity 0.3s ease-out'
-          }}
-        >
-          🌳 Навигация...
-        </div>
-      )}
+
       <style jsx>{`
         .tree-container {
           transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
