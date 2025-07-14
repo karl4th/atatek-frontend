@@ -186,104 +186,82 @@ const closeSiblingNodes = (tree: TreeNode, targetId: number): TreeNode => {
   return updatedTree;
 };
 
-const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation }: { initialData?: TreeNode; orientation: "vertical" | "horizontal" }) => {
+const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation }) => {
   const treeContainer = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
   const [dimensions, setDimensions] = useState<Dimensions>({ width: 0, height: 0 });
   const [treeData, setTreeData] = useState<TreeNode>(initialData!);
   const [translate, setTranslate] = useState<Translate>({ x: 0, y: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Простая инициализация - дерево всегда по центру экрана
+  // Глобальные стили для html/body
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      html, body, #__next {
+        width: 100%;
+        height: 100%;
+        min-width: 100vw;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
+  // Центрирование по размерам контейнера
   useEffect(() => {
     const updateCenter = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      setDimensions({ width, height });
-      setTranslate({ x: width / 2, y: height / 2 });
+      if (treeContainer.current) {
+        const rect = treeContainer.current.getBoundingClientRect();
+        setDimensions({ width: rect.width, height: rect.height });
+        requestAnimationFrame(() => {
+          setTranslate({ x: rect.width / 2, y: rect.height / 2 });
+        });
+      }
     };
-
     updateCenter();
     window.addEventListener('resize', updateCenter);
-    
-    return () => {
-      window.removeEventListener('resize', updateCenter);
-    };
+    return () => window.removeEventListener('resize', updateCenter);
   }, []);
 
   const handleNodeClick = async (nodeDatum: TreeNode, evt: React.MouseEvent) => {
     if (!treeContainer.current) return;
-
-    // Анимация центрирования на кликнутый узел
     setIsAnimating(true);
-    
     const rect = treeContainer.current.getBoundingClientRect();
     const clickedX = evt.clientX - rect.left;
     const clickedY = evt.clientY - rect.top;
-
     const from = { ...translate };
     const to = {
-      x: dimensions.width / 2 - clickedX + translate.x,
-      y: dimensions.height / 2 - clickedY + translate.y,
+      x: rect.width / 2 - clickedX + translate.x,
+      y: rect.height / 2 - clickedY + translate.y,
     };
-
-    // Используем улучшенную анимацию с более плавным easing
-    animateTranslate(
-      from, 
-      to, 
-      500,
-      setTranslate,
-      easingFunctions.easeInOutQuart
-    );
-
-    setTimeout(() => {
-      setIsAnimating(false);
-    }, 500);
-
-    // Сначала закрываем всех соседних узлов (братьев)
+    animateTranslate(from, to, 500, setTranslate, easingFunctions.easeInOutQuart);
+    setTimeout(() => setIsAnimating(false), 500);
     let updatedTree = closeSiblingNodes(treeData, nodeDatum.id);
-    
-    // Если были закрыты соседние узлы, обновляем дерево с небольшой задержкой для плавности
     if (updatedTree !== treeData) {
       setTreeData(updatedTree);
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    
-    // Логика раскрытия/сворачивания узлов
     if (nodeDatum.children && nodeDatum.children.length > 0) {
-      // Сворачиваем узел
-      updatedTree = updateNodeById(updatedTree, nodeDatum.id, (node) => ({
-        ...node,
-        children: [],
-      }));
+      updatedTree = updateNodeById(updatedTree, nodeDatum.id, (node) => ({ ...node, children: [] }));
       setTreeData(updatedTree);
       return;
     }
-
     try {
       const response = await axios.get(
         `https://api.atatek.kz/tree/api/tree/?node_id=${nodeDatum.id}`,
         { withCredentials: true }
       );
-
-      const children = response.data.data.map((item: any) => ({
-        ...item,
-        children: [],
-        hexColor: "#2ecc71",
-      }));
-
+      const children = response.data.data.map((item: any) => ({ ...item, children: [], hexColor: "#2ecc71" }));
       if (children.length === 0) {
         toast.info("Ұрпақтары табылмады");
         return;
       }
-
-      // Разворачиваем узел с новыми детьми
-      updatedTree = updateNodeById(updatedTree, nodeDatum.id, (node) => ({
-        ...node,
-        children,
-      }));
+      updatedTree = updateNodeById(updatedTree, nodeDatum.id, (node) => ({ ...node, children }));
       setTreeData(updatedTree);
-
     } catch (error) {
       console.error("Ошибка при загрузке детей:", error);
       toast.error("Ошибка при загрузке данных");
@@ -291,21 +269,23 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
   };
 
   return (
-    <div 
-      style={{ 
-        width: "100vw", 
-        height: "100vh", 
-        zIndex: "1",
-        background: "linear-gradient(135deg, rgba(165,200,108,0.05) 0%, rgba(255,255,255,0.02) 100%)",
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        minWidth: "100vw",
+        minHeight: "100vh",
         position: "fixed",
         top: 0,
         left: 0,
+        zIndex: 1,
+        background: "linear-gradient(135deg, rgba(165,200,108,0.05) 0%, rgba(255,255,255,0.02) 100%)",
         overflow: "hidden"
-      }} 
-      ref={treeContainer} 
+      }}
+      ref={treeContainer}
       className="tree-container"
     >
-      {dimensions.width > 0 && (
+      {dimensions.width > 0 && treeData && (
         <Tree
           data={treeData}
           orientation={orientation}
@@ -319,7 +299,7 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           shouldCollapseNeighborNodes={false}
           zoomable={true}
           transitionDuration={1200}
-          centeringTransitionDuration={800}
+          centeringTransitionDuration={500}
           nodeSize={orientation === "vertical" ? { x: 110, y: 100 } : { x: 140, y: 80 }}
           separation={{ siblings: 1.2, nonSiblings: -1 }}
           scaleExtent={{ min: 0.3, max: 3 }}
@@ -328,9 +308,8 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           pathClassFunc={() => "tree-path"}
         />
       )}
-      {/* Индикатор загрузки при анимации */}
       {isAnimating && (
-        <div 
+        <div
           style={{
             position: 'absolute',
             top: '20px',
@@ -350,14 +329,13 @@ const TreeComponent: React.FC<TreeComponentProps> = ({ initialData, orientation 
           🌳 Навигация...
         </div>
       )}
-      
       <style jsx>{`
         .tree-container {
-          transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+          transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                       transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tree-container.transitioning {
-          transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+          transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                       transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tree-path {
