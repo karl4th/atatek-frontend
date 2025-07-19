@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowDown, Download, Search } from "lucide-react";
 import { NavHeader } from "@/components/nav/NavHeader";
 import DrawerTree from "@/components/tree/drawwer-tree";
-import TreeComponent from "@/components/tree/tree";
+// import TreeComponent from "@/components/tree/tree";
 import { TreeProvider, useTree } from "@/contexts/tree-context";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useHydration } from "@/hooks/useHydration";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import TreeByGojs from "@/components/tree/tree-by-gojs";
 
 const initialTreeData = {
   id: 1,
@@ -121,7 +122,8 @@ function TreeContent() {
           className="w-[100px] absolute top-10 left-10"
           style={{ visibility: "hidden", position: "absolute", left: "-9999px" }}
         />
-        <TreeComponent orientation={orientation} initialData={initialTreeData} />
+        {/* <TreeComponent orientation={orientation} initialData={initialTreeData} /> */}
+        <TreeByGojs />
       </div>
 
       <DrawerTree open={open} setOpen={setOpen} />
