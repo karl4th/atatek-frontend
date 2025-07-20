@@ -240,6 +240,13 @@ const TreeByGojs = ({ type, initialData }: TreeByGojsProps) => {
         const layout = diagram.layout as go.TreeLayout;
         layout.angle = type; // 🔁 обновляем угол
         diagram.layoutDiagram(true); // 🔁 пересчитываем layout
+
+        const rootNode = diagram.findNodeForKey(initialData[0]?.id);
+        if (rootNode) {
+          diagram.animationManager.isEnabled = true;
+          diagram.animationManager.duration = 1000;
+          diagram.scrollToRect(rootNode.actualBounds);
+        }
       
     }, [type]);
 
